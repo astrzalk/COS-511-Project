@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/eftseng/COS-511-Project/MultiBoost/src/Bzip2/Bzip2Wrapper.cpp
+Bzip2Wrapper.h
+/home/eftseng/COS-511-Project/MultiBoost/src/Bzip2/Bzip2Wrapper.h
+
+/home/eftseng/COS-511-Project/MultiBoost/src/Bzip2/Bzip2Wrapper.h
+bzlib.h
+/home/eftseng/COS-511-Project/MultiBoost/src/Bzip2/bzlib.h
+fstream
+-
+iostream
+-
+string.h
+-
+stdlib.h
+-
+
+/home/eftseng/COS-511-Project/MultiBoost/src/Bzip2/bzlib.h
+stdio.h
+-
+windows.h
+-
+
