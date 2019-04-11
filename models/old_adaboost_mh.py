@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-# from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier
+import matplotlib.pyplot as plt
 
-# How to use sklearn tree:
-# clf_tree = DecisionTreeClassifier(max_depth = 1, random_state = 1)
 
 # NOTE that if there are bugs this function would be the first place to check
 # as getting the logic right for generating Y_m is a little tough and I could
@@ -68,25 +67,35 @@ def old_ada_boost_mh(X_train, y_train, X_test, y_test, T, clf):
                          error, and testing error for T rounds of boosting.
     """
     N = X_train.shape[0]
-    k = len(np.unique([y_train, y_test]))
+    train_labels = set(y_train)
+    test_labels = set(y_test)
+    k = len(train_labels.union(test_labels))
     X_train_m, y_train_m = get_multiclass_data(X_train, y_train, k)
     X_test_m, y_test_m = get_multiclass_data(X_test, y_test, k)
     training_error, testing_error = [], []
 
     D_t = np.ones((N * k, 1)) * (1 / (N * k)) # N * k by 1
+    D_t = D_t.reshape((D_t.shape[0],)) # N * k by ,
     for t in range(T):
+        print("Round {}".format(t + 1))
         h_t = clf.fit(X_train_m, y_train_m, sample_weight=D_t)
         # r_t = \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l)
-        h_t_x_l = np.array([h_t.predict(X_train_m[i]) for i in range(N*k)])
+        # Calculate the training error as per
+        # https://link.springer.com/content/pdf/10.1023%2FA%3A1007614523901.pdf
+        # page 312
+        h_t_x_l = h_t.predict(X_train_m)
         r_t = np.sum(np.multiply(np.multiply(D_t, y_train_m), h_t_x_l))
         err_train_t = 0.5 * (1 - r_t)
-        training_error.append(err_train_t)
+        # training_error.append(err_train_t)
+        training_error.append(r_t)
 
         # Get testing error of h_t
-        h_t_x_l_test = np.array([h_t.predict(X_test_m[i]) for i in range(N*k)])
-        r_t_test = np.sum(np.multiply(np.multiply(D_t, y_test_m), h_t_x_l_test))
-        err_test_t = 0.5 * (1 - r_t_test)
-        testing_error.append(err_test_t)
+        # TODO: Debug the fact that D_t has to be different for testing...
+        # breakpoint()
+        # h_t_x_l_test = h_t.predict(X_test_m)
+        # r_t_test = np.sum(np.multiply(np.multiply(D_t, y_test_m), h_t_x_l_test))
+        # err_test_t = 0.5 * (1 - r_t_test)
+        # testing_error.append(err_test_t)
 
         # Update D_t
         alpha_t = 0.5 * np.log((1 + r_t) / (1 - r_t))
@@ -109,6 +118,19 @@ if __name__ == "__main__":
     print("The size of y_train is {}. y_m_train should have shape {}."\
 .format(y_train.shape, (y_train.shape[0]*k, 1)))
     print("The size of X_m_train is {}.".format(y_m_train.shape))
+
+    # Test basic functionality of old_adaboost_mh function
+    X_test = np.load('../data/pendigits_test_data.npy')
+    y_test = np.load('../data/pendigits_test_labels.npy')
+
+    T = 20
+    clf_tree = DecisionTreeClassifier(max_depth = 1, random_state=1)
+    a, b = old_ada_boost_mh(X_train, y_train, X_test, y_test, T, clf_tree)
+    ts = np.linspace(1, T, num=T)
+    plt.plot(ts, a)
+    plt.xlabel("T")
+    plt.ylabel("r_t")
+    plt.show()
 
 
 
