@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#############################################################################
+# The below code has three main adaboost functions:
+# S_adaboost_mh is the original Schapire, Singer adaboost.mh
+# interpreted to mean unraveled vector for both Y and W.
+##
+# K_adaboost_mh is Kegl's interpretation of Schapire's adaboost.mh.
+##
+# factorized_adaboost_mh is the factorized version of adaboost as proposed
+# in return of adaboost paper.
+############################################################################
 
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
@@ -48,7 +58,31 @@ def get_multiclass_data(X, Y, k):
 
     return (X_m, np.array(Y_m))
 
-def old_ada_boost_mh(X_train, y_train, X_test, y_test, T, clf):
+def get_ham_loss(W, h, Y, unravel):
+    """
+    W: N by k (or (N*k,)) weight matrix, numpy-array.
+    h: N by k (or (N*k,)) predictions from strong hypothesis
+       predicted on data, numpy-array.
+    Y: N by k (or (N*k,)) label matrix, numpy-array.
+    unravel: Boolean variable to determine whether to think about
+             the multiclass case as (N*k, ) (False) or (N, k) (True).
+    :returns: h_loss, float.
+    """
+    if unravel:
+        # unravel columnwise i.e. for each class get all the examples
+        W_unraveled = np.ravel(W, order='F')
+        Y_unraveled = np.ravel(Y, order='F')
+        h_unraveled = np.ravel(h, order='F')
+        indicator_bool = (np.sign(h_unraveled) != Y_unraveled)
+        # The 1*bool trick makes python bools become int 0-1
+        h_loss = np.sum(np.multiply(W_unraveled, 1*indicator_bool))
+    else:
+        indicator_bool = (np.sign(h) != Y)
+        h_loss = np.sum(np.multiply(W, 1*indicator_bool))
+
+    return h_loss
+
+def S_adaboost_mh(X_train, y_train, X_test, y_test, T, clf, W_init):
     """
     Input
     -----
@@ -60,13 +94,17 @@ def old_ada_boost_mh(X_train, y_train, X_test, y_test, T, clf):
        Type: Int.
     clf: Base (or weak) classifier.
          Type: sklearn classifier, expected just DecisionTreeClassifier.
+    W_init: Boolean; True if using uniform weighting scheme, false if using
+            the assymetric scheme given by equation (3) in return of adaboost
+            paper.
 
     Returns
     -------
-    err_train, err_test: A tuple of floats representing the training
+    train_error, test_error: A tuple of floats representing the training
                          error, and testing error for T rounds of boosting.
     """
     N = X_train.shape[0]
+    N_test = X_test.shape[0]
     train_labels = set(y_train)
     test_labels = set(y_test)
     k = len(train_labels.union(test_labels))
@@ -74,36 +112,53 @@ def old_ada_boost_mh(X_train, y_train, X_test, y_test, T, clf):
     X_test_m, y_test_m = get_multiclass_data(X_test, y_test, k)
     training_error, testing_error = [], []
 
-    D_t = np.ones((N * k, 1)) * (1 / (N * k)) # N * k by 1
-    D_t = D_t.reshape((D_t.shape[0],)) # N * k by ,
+    if W_init:
+        D_t = np.ones((N * k, )) * (1 / (N * k)) # N * k by ,
+        w = np.ones((N * k, )) * (1 / (N * k))
+        w_test = np.ones((N_test * k, )) * (1 / (N_test * k))
+    else:
+        # Implemented poorly, TODO make it better
+        D_t = np.ones((N, k))
+        w = np.ones((N, k))
+        for i in range(N):
+            for j in range(k):
+                if y_train_m[k*i + j] == 1:
+                    D_t[i, j] = D_t[i, j] * 0.5 * (1 / N)
+                    w[i, j] = w[i, j] * 0.5 * (1 / N)
+                else:
+                    D_t[i, j] = D_t[i, j] * 0.5 * (1 / (N *(k - 1)))
+                    w[i, j] = w[i, j] * 0.5 * (1 / (N *(k - 1)))
+
+    h_ts, h_ts_test, gammas = [], [], []
     for t in range(T):
         print("Round {}".format(t + 1))
         h_t = clf.fit(X_train_m, y_train_m, sample_weight=D_t)
-        # r_t = \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l)
-        # Calculate the training error as per
-        # https://link.springer.com/content/pdf/10.1023%2FA%3A1007614523901.pdf
-        # page 312
-        h_t_x_l = h_t.predict(X_train_m)
-        r_t = np.sum(np.multiply(np.multiply(D_t, y_train_m), h_t_x_l))
-        err_train_t = 0.5 * (1 - r_t)
-        # training_error.append(err_train_t)
-        training_error.append(r_t)
-
-        # Get testing error of h_t
-        # TODO: Debug the fact that D_t has to be different for testing...
-        # breakpoint()
-        # h_t_x_l_test = h_t.predict(X_test_m)
-        # r_t_test = np.sum(np.multiply(np.multiply(D_t, y_test_m), h_t_x_l_test))
-        # err_test_t = 0.5 * (1 - r_t_test)
-        # testing_error.append(err_test_t)
+        # r_t = \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l) AKA \gamma_t
+        h_t_x_l = h_t.predict(X_train_m) # (N*k, )
+        h_t_x_l_test = h_t.predict(X_test_m) # (N*k, )
+        gamma_t = np.sum(np.multiply(np.multiply(w, y_train_m), h_t_x_l))
+        gammas.append(gamma_t)
 
         # Update D_t
-        alpha_t = 0.5 * np.log((1 + r_t) / (1 - r_t))
-        Z_t = np.sqrt(1 - np.square(r_t))
+        alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+        h_ts.append(alpha_t * h_t_x_l)
+        h_ts_test.append(alpha_t * h_t_x_l_test)
+        Z_t = np.sqrt(1 - np.square(gamma_t))
         update = np.exp(-alpha_t * np.multiply(y_train_m, h_t_x_l)) / Z_t
         D_t = np.multiply(D_t, update)
-    return (training_error, testing_error)
+    H = sum(h_ts)
+    H_test = sum(h_ts_test)
+    train_error = get_ham_loss(w, H, y_train_m, False) # unravel = False
+    test_error = get_ham_loss(w_test, H_test, y_test_m, False) # unravel = False
+    return (train_error, testing_error, gammas)
 
+def K_adaboost_mh(X_train, y_train, X_test, y_test, T, clf, W_init):
+    # TODO implement Kegl's Interpretation of original adaboost
+    pass
+
+def factorized_adaboost_mh(X_train, y_train, X_test, y_test, T, clf, W_init):
+    # TODO implement Kegl's factorized adaboost
+    pass
 
 if __name__ == "__main__":
     # Test functionality of get_mutlicass_data function.
@@ -119,21 +174,11 @@ if __name__ == "__main__":
 .format(y_train.shape, (y_train.shape[0]*k, 1)))
     print("The size of X_m_train is {}.".format(y_m_train.shape))
 
-    # Test basic functionality of old_adaboost_mh function
+    # Test basic functionality of S_adaboost_mh function
     X_test = np.load('../data/pendigits_test_data.npy')
     y_test = np.load('../data/pendigits_test_labels.npy')
 
     T = 20
     clf_tree = DecisionTreeClassifier(max_depth = 1, random_state=1)
-    a, b = old_ada_boost_mh(X_train, y_train, X_test, y_test, T, clf_tree)
-    ts = np.linspace(1, T, num=T)
-    plt.plot(ts, a)
-    plt.xlabel("T")
-    plt.ylabel("r_t")
-    plt.show()
-
-
-
-
-
+    a, b, c = S_adaboost_mh(X_train, y_train, X_test, y_test, T, clf_tree, True)
 
