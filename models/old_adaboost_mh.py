@@ -13,7 +13,6 @@
 
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
-import matplotlib.pyplot as plt
 
 
 # NOTE that if there are bugs this function would be the first place to check
@@ -152,9 +151,86 @@ def S_adaboost_mh(X_train, y_train, X_test, y_test, T, clf, W_init):
     test_error = get_ham_loss(w_test, H_test, y_test_m, False) # unravel = False
     return (train_error, testing_error, gammas)
 
+
+def one_hot_labels(y, k):
+    """
+    y: N by 1 numpy-array corresponding to the labels.
+    k: float, corresponding to number of unique classes.
+    returns: Y, an N by k numpy-array with each row containing
+             a 1 for the correct class and -1 otherwise.
+    """
+    N = y.shape[0]
+    Y = np.ones((N, k)) * -1
+    for i in range(N):
+        Y[i, y[i]] *= -1 # Make the correct class become +1.
+
+    return Y
+# TODO: Write function that takes a list of k classifiers, data
+
+
 def K_adaboost_mh(X_train, y_train, X_test, y_test, T, clf, W_init):
-    # TODO implement Kegl's Interpretation of original adaboost
-    pass
+    """
+    Input
+    -----
+    X: The data assumed to be N (number of examples) by d (features).
+       Type: np.array-like.
+    y: The labels assumed to be N by 1, takes on one of k unique values.
+       Type: np.array-like.
+    T: Number of rounds to do boosting.
+       Type: Int.
+    clf: Base (or weak) classifier.
+         Type: sklearn classifier, expected just DecisionTreeClassifier.
+    W_init: Boolean; True if using uniform weighting scheme, false if using
+            the assymetric scheme given by equation (3) in return of adaboost
+            paper.
+
+    Returns
+    -------
+    train_error, test_error: A tuple of floats representing the training
+                         error, and testing error for T rounds of boosting.
+    """
+    N = X_train.shape[0]
+    N_test = X_test.shape[0]
+    train_labels = set(y_train)
+    test_labels = set(y_test)
+    k = len(train_labels.union(test_labels))
+    Y_train = one_hot_labels(y_train, k)
+    Y_test = one_hot_labels(y_test, k)
+
+    # Make the below a function eventually
+    if W_init:
+        D_t = np.ones((N, k)) * (1 / (N * k)) # N * k by ,
+        w = np.ones((N, k)) * (1 / (N * k))
+        w_test = np.ones((N_test, k)) * (1 / (N_test * k))
+    else:
+        D_t = np.ones((N, k)) * 0.5 * (1 / N)
+        w = np.ones((N, k)) * 0.5 * (1 / N)
+        for i in range(N):
+            D_t[i, y_train[i]] *= 1 / (k - 1)
+
+    h_ts, h_ts_test, gammas = [], [], []
+    for t in range(T):
+        print("Round {}".format(t + 1))
+        h_t = [clf.fit(X_train, Y_train[:, i], sample_weight=D_t[:, i])
+                for i in range(k)] # list with k classifiers
+        # r_t = \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l) AKA \gamma_t
+        h_t_x_l = np.array([h_t[i].predict(X_train) for i in range(k)]).T
+        h_t_x_l_test = np.array([h_t[i].predict(X_test) for i in range(k)]).T
+        gamma_t = np.sum(np.multiply(np.multiply(w, Y_train), h_t_x_l)) # assumes all things are (N, k).
+        gammas.append(gamma_t)
+
+        # Update D_t
+        alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+        h_ts.append(alpha_t * h_t_x_l)
+        h_ts_test.append(alpha_t * h_t_x_l_test)
+        Z_t = np.sqrt(1 - np.square(gamma_t))
+        update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
+        D_t = np.multiply(D_t, update)
+    H = sum(h_ts)
+    H_test = sum(h_ts_test)
+    train_error = get_ham_loss(w, H, Y_train, True) # unravel = False
+    test_error = get_ham_loss(w_test, H_test, Y_test, True) # unravel = False
+    return (train_error, test_error, gammas)
 
 def factorized_adaboost_mh(X_train, y_train, X_test, y_test, T, clf, W_init):
     # TODO implement Kegl's factorized adaboost
@@ -175,10 +251,12 @@ if __name__ == "__main__":
     print("The size of X_m_train is {}.".format(y_m_train.shape))
 
     # Test basic functionality of S_adaboost_mh function
+    # i.e. does it even interpret and run...
     X_test = np.load('../data/pendigits_test_data.npy')
     y_test = np.load('../data/pendigits_test_labels.npy')
 
     T = 20
     clf_tree = DecisionTreeClassifier(max_depth = 1, random_state=1)
     a, b, c = S_adaboost_mh(X_train, y_train, X_test, y_test, T, clf_tree, True)
+    a1, b1, c1 = K_adaboost_mh(X_train, y_train, X_test, y_test, T, clf_tree, True)
 
