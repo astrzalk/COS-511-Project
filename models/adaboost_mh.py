@@ -272,4 +272,12 @@ class AdaBoostMH:
         return (train_error, test_error, gammas, D_ts)
 
     def run_factorized(self, T, clf, W_init, verbose):
+        # clf will have very different API
+        # it will have API of get_weak_learner
+        # function
+        # input: X_train, y_train, D_t
+        # _get_weak_learner returns (alpha, gamma, h_t)
+        # _get_weak
+        # append h_ts
+        # update D_t
         pass
