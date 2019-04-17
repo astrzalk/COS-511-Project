@@ -173,7 +173,7 @@ class AdaBoostMH:
         X_test_m, y_test_m = self._get_multiclass_data(self.X_te, self.y_te)
         # Compute Initial Distributions
         raveled = True # True in original interpretation.
-        D_t = self._get_init_distr(self, W_init, raveled, use_train=True)
+        D_t = self._get_init_distr(W_init, raveled, use_train=True)
 
         h_ts, h_ts_te, gammas, D_ts = [], [], [], [D_t]
         for t in range(T):
@@ -201,8 +201,8 @@ class AdaBoostMH:
         H_test = sum(h_ts_te)
 
         # Calculate the error of H
-        w_init_tr = self._get_init_distr(self, W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(self, W_init, raveled, use_train=False)
+        w_init_tr = self._get_init_distr(W_init, raveled, use_train=True)
+        w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, y_train_m, unravel=False)
         test_error = self._get_ham_loss(w_init_te, H_test, y_test_m, unravel=False)
         return (train_error, test_error, gammas, D_ts)
@@ -238,7 +238,7 @@ class AdaBoostMH:
 
         # Compute initial distributions
         raveled = False # False in Kegl's interpretation.
-        D_t = self._get_init_distr(self, W_init, raveled, use_train=True)
+        D_t = self._get_init_distr(W_init, raveled, use_train=True)
 
         h_ts, h_ts_test, gammas, D_ts = [], [], [], [D_t]
         for t in range(T):
@@ -265,8 +265,8 @@ class AdaBoostMH:
         H = sum(h_ts)
         H_test = sum(h_ts_test)
         # Calculate the error of H
-        w_init_tr = self._get_init_distr(self, W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(self, W_init, raveled, use_train=False)
+        w_init_tr = self._get_init_distr(W_init, raveled, use_train=True)
+        w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
         return (train_error, test_error, gammas, D_ts)
