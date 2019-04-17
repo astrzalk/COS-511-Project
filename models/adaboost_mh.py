@@ -270,3 +270,6 @@ class AdaBoostMH:
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
         return (train_error, test_error, gammas, D_ts)
+
+    def run_factorized(self, T, clf, W_init, verbose):
+        pass
