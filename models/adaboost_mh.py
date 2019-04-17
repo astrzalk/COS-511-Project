@@ -66,18 +66,18 @@ class AdaBoostMH:
         Y_m = [1 if X_m[i, -1] == Ys_col[i] else -1 for i in range(N*self.k)]
         return (X_m, np.array(Y_m))
 
-def _one_hot_labels(self, y):
-    """
-    y: N by 1 numpy-array corresponding to the labels.
-    k: float, corresponding to number of unique classes.
-    returns: Y, an N by k numpy-array with each row containing
-             a 1 for the correct class and -1 otherwise.
-    """
-    N = y.shape[0]
-    Y = np.ones((N, self.k)) * -1
-    for i in range(N):
-        Y[i, y[i]] *= -1 # Make the correct class become +1.
-    return Y
+    def _one_hot_labels(self, y):
+        """
+        y: N by 1 numpy-array corresponding to the labels.
+        k: float, corresponding to number of unique classes.
+        returns: Y, an N by k numpy-array with each row containing
+                 a 1 for the correct class and -1 otherwise.
+        """
+        N = y.shape[0]
+        Y = np.ones((N, self.k)) * -1
+        for i in range(N):
+            Y[i, y[i]] *= -1 # Make the correct class become +1.
+        return Y
 
     def _get_init_distr(self, normal_init, raveled, use_train):
         """ Computes initial distribution over examples and labels.
@@ -174,10 +174,8 @@ def _one_hot_labels(self, y):
         # Compute Initial Distributions
         raveled = True # True in original interpretation.
         D_t = self._get_init_distr(self, W_init, raveled, use_train=True)
-        w_init_tr = self._get_init_distr(self, W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(self, W_init, raveled, use_train=False)
 
-        h_ts, h_ts_te, gammas = [], [], []
+        h_ts, h_ts_te, gammas, D_ts = [], [], [], [D_t]
         for t in range(T):
             if verbose:
                 print("Round {}".format(t + 1))
@@ -188,7 +186,7 @@ def _one_hot_labels(self, y):
             # \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l)
             h_t_x_l = h_t.predict(X_train_m) # (N*k, )
             h_t_x_l_te = h_t.predict(X_test_m) # (N*k, )
-            gamma_t = np.sum(np.multiply(np.multiply(w_init_tr, y_train_m), h_t_x_l))
+            gamma_t = np.sum(np.multiply(np.multiply(D_t, y_train_m), h_t_x_l))
             gammas.append(gamma_t)
 
             # Update D_t
@@ -198,11 +196,16 @@ def _one_hot_labels(self, y):
             Z_t = np.sqrt(1 - np.square(gamma_t))
             update = np.exp(-alpha_t * np.multiply(y_train_m, h_t_x_l)) / Z_t
             D_t = np.multiply(D_t, update)
+            D_ts.append(D_t)
         H = sum(h_ts)
         H_test = sum(h_ts_te)
+
+        # Calculate the error of H
+        w_init_tr = self._get_init_distr(self, W_init, raveled, use_train=True)
+        w_init_te = self._get_init_distr(self, W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, y_train_m, unravel=False)
         test_error = self._get_ham_loss(w_init_te, H_test, y_test_m, unravel=False)
-        return (train_error, test_error, gammas)
+        return (train_error, test_error, gammas, D_ts)
 
     def run_kegl(self, T, clf, W_init, verbose):
         """
@@ -236,10 +239,8 @@ def _one_hot_labels(self, y):
         # Compute initial distributions
         raveled = False # False in Kegl's interpretation.
         D_t = self._get_init_distr(self, W_init, raveled, use_train=True)
-        w_init_tr = self._get_init_distr(self, W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(self, W_init, raveled, use_train=False)
 
-        h_ts, h_ts_test, gammas = [], [], []
+        h_ts, h_ts_test, gammas, D_ts = [], [], [], [D_t]
         for t in range(T):
             if verbose:
                 print("Round {}".format(t + 1))
@@ -250,7 +251,7 @@ def _one_hot_labels(self, y):
             # \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l)
             h_t_x_l = np.array([h_t[i].predict(X_train) for i in range(k)]).T
             h_t_x_l_test = np.array([h_t[i].predict(X_test) for i in range(k)]).T
-            gamma_t = np.sum(np.multiply(np.multiply(w_init_tr, Y_train), h_t_x_l))
+            gamma_t = np.sum(np.multiply(np.multiply(D_t, Y_train), h_t_x_l))
             gammas.append(gamma_t)
 
             # Update D_t
@@ -260,8 +261,12 @@ def _one_hot_labels(self, y):
             Z_t = np.sqrt(1 - np.square(gamma_t))
             update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
             D_t = np.multiply(D_t, update)
+            D_ts.append(D_t)
         H = sum(h_ts)
         H_test = sum(h_ts_test)
+        # Calculate the error of H
+        w_init_tr = self._get_init_distr(self, W_init, raveled, use_train=True)
+        w_init_te = self._get_init_distr(self, W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        return (train_error, test_error, gammas)
+        return (train_error, test_error, gammas, D_ts)
