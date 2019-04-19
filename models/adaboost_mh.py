@@ -244,7 +244,7 @@ class AdaBoostMH:
         for t in range(T):
             if verbose:
                 print("Round {}".format(t + 1))
-                
+
             # Fit weak learner to data
             h_t = clf(X_train, Y_train, D_t)
 
@@ -255,13 +255,13 @@ class AdaBoostMH:
             for i in range(n):
                 for l in range(k):
                     h_t_x_l[i,l] = h_t[l](X_train[i,:])
-            
+
             n = X_test.shape[0]
             h_t_x_l_test = np.zeros((n,k))
             for i in range(n):
                 for l in range(k):
                     h_t_x_l_test[i,l] = h_t[l](X_test[i,:])
-                    
+
             gamma_t = np.sum(np.multiply(np.multiply(D_t, Y_train), h_t_x_l))
             gammas.append(gamma_t)
             #assert (h_t_tr.shape == (self.n_tr, k)), "The shape of h_t_tr needs to be transposed."
@@ -272,10 +272,10 @@ class AdaBoostMH:
             h_ts_test.append(alpha_t * h_t_x_l_test)
             Z_t = np.sqrt(1 - np.square(gamma_t))
             update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
-            
+
             D_t = np.multiply(D_t, update)
             D_ts.append(D_t)
-            
+
             '''
             # List with k classifiers
             h_t = [clf.fit(X_train, Y_train[:, i], sample_weight=D_t[:, i])
@@ -288,7 +288,7 @@ class AdaBoostMH:
             gammas.append(gamma_t)
 
             print(h_t_x_l)
-            
+
             # Update D_t
             alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
             print(alpha_t)
@@ -306,7 +306,7 @@ class AdaBoostMH:
         w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        
+
         return (H, H_test, train_error, test_error, gammas, D_ts)
         #return (train_error, test_error, gammas, D_ts)
 
@@ -319,7 +319,7 @@ class AdaBoostMH:
         # Compute initial distributions
         raveled = False # False in Factorized Interpretation
         D_t = self._get_init_distr(W_init, raveled, use_train=True)
-        
+
         h_ts_tr, h_ts_te, gammas, D_ts = [], [], [], [D_t]
         for t in range(T):
             if verbose:
@@ -340,10 +340,6 @@ class AdaBoostMH:
             alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
             Z_t = np.sqrt(1 - np.square(gamma_t))
             update = np.exp(-alpha_t * np.multiply(Y_train, h_t_tr)) / Z_t
-            
-            print("update")
-            print(update)
-            
             D_t = np.multiply(D_t, update)
             D_ts.append(D_t)
         H = sum(h_ts_tr)
