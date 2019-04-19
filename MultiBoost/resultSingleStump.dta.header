@@ -1,5 +1,5 @@
-t	e01	e01	time	
+t	ham	ham	time	
 
 Column description:
 -------------------
-e01: Zero-One Error (error = max positive class score < max negative class score)
+ham: Hamming Error
