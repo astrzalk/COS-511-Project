@@ -29,6 +29,7 @@ def save_csv_as_np(data_path, save_path, filename):
 
 def main():
     weight_path = '../pendigit_weights_singlestump/'
+    save_csv_as_np(weight_path, weight_path, 'weight_0')
     save_csv_as_np(weight_path, weight_path, 'weight_1')
     save_csv_as_np(weight_path, weight_path, 'weight_2')
     save_csv_as_np(weight_path, weight_path, 'weight_3')
