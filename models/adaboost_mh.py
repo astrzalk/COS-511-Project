@@ -128,7 +128,7 @@ class AdaBoostMH:
         Y: N by k (or (N*k,)) label matrix, numpy-array.
         unravel: Boolean variable to determine whether to think about
                  the multiclass case as (N*k, ) (False) or (N, k) (True).
-        :returns: h_loss, float.
+        returns: h_loss, float.
         """
         if unravel:
             # unravel columnwise i.e. for each class get all the examples
@@ -271,13 +271,45 @@ class AdaBoostMH:
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
         return (train_error, test_error, gammas, D_ts)
 
-    def run_factorized(self, T, clf, W_init, verbose):
-        # clf will have very different API
-        # it will have API of get_weak_learner
-        # function
-        # input: X_train, y_train, D_t
-        # _get_weak_learner returns (alpha, gamma, h_t)
-        # _get_weak
-        # append h_ts
-        # update D_t
-        pass
+    def run_factorized(self, T, weak_learner, W_init, verbose):
+        # Map instance variables to local variables to be more explicit.
+        X_train, X_test = self.X_tr, self.X_te
+        Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
+        k = self.k
+
+        # Compute initial distributions
+        raveled = False # False in Factorized Interpretation
+        D_t = self._get_init_distr(W_init, raveled, use_train=True)
+
+        h_ts_tr, h_ts_te, gammas, D_ts = [], [], [], [D_t]
+        for t in range(T):
+            if verbose:
+                print("Round {}".format(t + 1))
+            # Fit weak learner to data
+            alpha_t, v, phi, gamma_t = weak_learner(X_train, Y_train, D_t)
+            assert (isinstance(v, np.ndarray)), "Make v a numpy array."
+            gammas.append(gamma_t)
+            # Check that the below two are arrays of size N_tr(te) by k
+            # might need to add a transpose to the end
+            h_t_tr = np.array([alpha_t * phi(X_train[i, :]) * v for i in range(self.n_tr)])
+            h_t_te = np.array([alpha_t * phi(X_test[i, :]) * v for i in range(self.n_te)])
+            h_ts_tr.append(h_t_tr)
+            h_ts_te.append(h_t_te)
+            assert (h_t_tr.shape == (self.n_tr, k)), "The shape of h_t_tr needs to be transposed."
+
+            # Update D_t
+            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+            Z_t = np.sqrt(1 - np.square(gamma_t))
+            update = np.exp(-alpha_t * np.multiply(Y_train, h_t_tr)) / Z_t
+            D_t = np.multiply(D_t, update)
+            D_ts.append(D_t)
+        H = sum(h_ts_tr)
+        H_test = sum(h_ts_te)
+        # Calculate the error of H
+        # We could make the below cleaner by implementing a _get_error
+        # method. It just needs W_init to become an instance variable.
+        w_init_tr = self._get_init_distr(W_init, raveled, use_train=True)
+        w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
+        train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
+        test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
+        return (train_error, test_error, gammas, D_ts)
