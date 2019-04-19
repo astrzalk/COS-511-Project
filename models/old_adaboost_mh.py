@@ -260,3 +260,7 @@ if __name__ == "__main__":
     a, b, c = S_adaboost_mh(X_train, y_train, X_test, y_test, T, clf_tree, True)
     a1, b1, c1 = K_adaboost_mh(X_train, y_train, X_test, y_test, T, clf_tree, True)
 
+
+    # algs = AdaBoostMH(X_train, y_train, X_test, y_test)
+    # algs.run_schapire(T, clf_tree, W_init,  )
+

@@ -44,6 +44,7 @@ def stump_base(X,Y,W):
     returns: alpha, v, phi, gamma; Make sure v is a numpy array
 
     """
+
     # Make sure phi = stump(j^*, b_{j^*})
     pass
 
