@@ -107,13 +107,13 @@ class AdaBoostMH:
         if normal_init:
             W = np.ones((n, k)) * (1 / (n * k))
         else:
-            W = np.ones((n, k)) * 0.5 * (1 / n)
+            W = np.ones((n, k)) * 0.5 * (1 / (n * (k - 1)))
             if use_train:
                 for i in range(n):
-                    W[i, self.y_tr[i]] *= 1 / (k - 1)
+                    W[i, self.y_tr[i]] *= (k - 1)
             else:
                 for i in range(n):
-                    W[i, self.y_te[i]] *= 1 / (k - 1)
+                    W[i, self.y_te[i]] *= (k - 1)
 
         if raveled:
             W = np.ravel(W, order='F')
@@ -244,6 +244,39 @@ class AdaBoostMH:
         for t in range(T):
             if verbose:
                 print("Round {}".format(t + 1))
+                
+            # Fit weak learner to data
+            h_t = clf(X_train, Y_train, D_t)
+
+            # Check that the below two are arrays of size N_tr(te) by k
+            # might need to add a transpose to the end
+            n = X_train.shape[0]
+            h_t_x_l = np.zeros((n,k))
+            for i in range(n):
+                for l in range(k):
+                    h_t_x_l[i,l] = h_t[l](X_train[i,:])
+            
+            n = X_test.shape[0]
+            h_t_x_l_test = np.zeros((n,k))
+            for i in range(n):
+                for l in range(k):
+                    h_t_x_l_test[i,l] = h_t[l](X_test[i,:])
+                    
+            gamma_t = np.sum(np.multiply(np.multiply(D_t, Y_train), h_t_x_l))
+            gammas.append(gamma_t)
+            #assert (h_t_tr.shape == (self.n_tr, k)), "The shape of h_t_tr needs to be transposed."
+
+            # Update D_t
+            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+            h_ts.append(alpha_t * h_t_x_l)
+            h_ts_test.append(alpha_t * h_t_x_l_test)
+            Z_t = np.sqrt(1 - np.square(gamma_t))
+            update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
+            
+            D_t = np.multiply(D_t, update)
+            D_ts.append(D_t)
+            
+            '''
             # List with k classifiers
             h_t = [clf.fit(X_train, Y_train[:, i], sample_weight=D_t[:, i])
                     for i in range(k)]
@@ -254,14 +287,18 @@ class AdaBoostMH:
             gamma_t = np.sum(np.multiply(np.multiply(D_t, Y_train), h_t_x_l))
             gammas.append(gamma_t)
 
+            print(h_t_x_l)
+            
             # Update D_t
             alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+            print(alpha_t)
             h_ts.append(alpha_t * h_t_x_l)
             h_ts_test.append(alpha_t * h_t_x_l_test)
             Z_t = np.sqrt(1 - np.square(gamma_t))
             update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
             D_t = np.multiply(D_t, update)
             D_ts.append(D_t)
+            '''
         H = sum(h_ts)
         H_test = sum(h_ts_test)
         # Calculate the error of H
@@ -269,7 +306,9 @@ class AdaBoostMH:
         w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        return (train_error, test_error, gammas, D_ts)
+        
+        return (H, H_test, train_error, test_error, gammas, D_ts)
+        #return (train_error, test_error, gammas, D_ts)
 
     def run_factorized(self, T, weak_learner, W_init, verbose):
         # Map instance variables to local variables to be more explicit.
@@ -280,11 +319,11 @@ class AdaBoostMH:
         # Compute initial distributions
         raveled = False # False in Factorized Interpretation
         D_t = self._get_init_distr(W_init, raveled, use_train=True)
-
+        
         h_ts_tr, h_ts_te, gammas, D_ts = [], [], [], [D_t]
         for t in range(T):
             if verbose:
-                print("Round {}".format(t + 1))
+                print("Round {}".format(t + 1), flush=True)
             # Fit weak learner to data
             alpha_t, v, phi, gamma_t = weak_learner(X_train, Y_train, D_t)
             assert (isinstance(v, np.ndarray)), "Make v a numpy array."
@@ -301,6 +340,10 @@ class AdaBoostMH:
             alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
             Z_t = np.sqrt(1 - np.square(gamma_t))
             update = np.exp(-alpha_t * np.multiply(Y_train, h_t_tr)) / Z_t
+            
+            print("update")
+            print(update)
+            
             D_t = np.multiply(D_t, update)
             D_ts.append(D_t)
         H = sum(h_ts_tr)
@@ -312,4 +355,4 @@ class AdaBoostMH:
         w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        return (train_error, test_error, gammas, D_ts)
+        return (H, H_test, train_error, test_error, gammas, D_ts)
