@@ -143,7 +143,7 @@ class AdaBoostMH:
             h_loss = np.sum(np.multiply(W, 1*indicator_bool))
         return h_loss
 
-    def run_schapire(self, T, clf, W_init, verbose):
+    def run_schapire(self, T, clf, W_init, verbose=False):
         """
         Input
         -----
@@ -207,7 +207,7 @@ class AdaBoostMH:
         test_error = self._get_ham_loss(w_init_te, H_test, y_test_m, unravel=False)
         return (train_error, test_error, gammas, D_ts)
 
-    def run_kegl(self, T, clf, W_init, verbose):
+    def run_kegl(self, T, clf, W_init, verbose=False):
         """
         Input
         -----
@@ -310,7 +310,7 @@ class AdaBoostMH:
         return (H, H_test, train_error, test_error, gammas, D_ts)
         #return (train_error, test_error, gammas, D_ts)
 
-    def run_factorized(self, T, weak_learner, W_init, verbose):
+    def run_factorized(self, T, weak_learner, W_init, verbose=False):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
         Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
