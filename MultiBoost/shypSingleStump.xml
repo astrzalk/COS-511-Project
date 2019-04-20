@@ -1,4 +1,604 @@
 <?xml version="1.0"?>
 <multiboost>
 	<algo>SingleStumpLearner</algo>
+	<weakhyp iter="0">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.470094143012</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">1</class>
+			<class id="6">1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a16</column>
+		<threshold>12.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="1">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.333520401517</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">-1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a05</column>
+		<threshold>45.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="2">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.308349509499</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">-1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a02</column>
+		<threshold>3.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="3">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.347598619791</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">1</class>
+			<class id="2">1</class>
+			<class id="3">-1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a15</column>
+		<threshold>29.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="4">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.34845277313</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a12</column>
+		<threshold>32.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="5">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.254589481873</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">1</class>
+			<class id="7">1</class>
+			<class id="8">-1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a02</column>
+		<threshold>84.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="6">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.258775714515</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">1</class>
+			<class id="2">-1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">-1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a09</column>
+		<threshold>61.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="7">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.27954797271</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">-1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a04</column>
+		<threshold>1</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="8">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.309501314651</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a14</column>
+		<threshold>17.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="9">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.279577127856</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a16</column>
+		<threshold>65.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="10">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.266057676762</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a08</column>
+		<threshold>77.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="11">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.2460278505</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">1</class>
+			<class id="6">1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a01</column>
+		<threshold>19.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="12">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.23403508164</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a13</column>
+		<threshold>95.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="13">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.281126708929</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">1</class>
+			<class id="7">-1</class>
+			<class id="8">-1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a11</column>
+		<threshold>68.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="14">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.222193267922</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a04</column>
+		<threshold>94.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="15">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.231160404602</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a02</column>
+		<threshold>1.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="16">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.259288053543</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a10</column>
+		<threshold>28.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="17">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.224472516412</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">1</class>
+			<class id="2">-1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a09</column>
+		<threshold>27.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="18">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.216419681553</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a16</column>
+		<threshold>24.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="19">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.211503336399</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">1</class>
+			<class id="2">1</class>
+			<class id="3">-1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a01</column>
+		<threshold>65.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="20">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.208205510925</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">-1</class>
+			<class id="6">1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a02</column>
+		<threshold>99.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="21">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.222893567574</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">-1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">-1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a15</column>
+		<threshold>50.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="22">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.188221385148</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a13</column>
+		<threshold>47.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="23">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.181923392754</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">-1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a10</column>
+		<threshold>50.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="24">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.207951886352</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">-1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a02</column>
+		<threshold>32.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="25">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.247344786572</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a06</column>
+		<threshold>62.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="26">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.188641310162</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">1</class>
+			<class id="4">-1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a16</column>
+		<threshold>49.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="27">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.189185637816</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">-1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a14</column>
+		<threshold>13.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="28">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.178253421512</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">1</class>
+			<class id="1">-1</class>
+			<class id="2">1</class>
+			<class id="3">1</class>
+			<class id="4">1</class>
+			<class id="5">1</class>
+			<class id="6">-1</class>
+			<class id="7">1</class>
+			<class id="8">-1</class>
+			<class id="9">1</class>
+		</vArray>
+		<column>a02</column>
+		<threshold>78.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
+	<weakhyp iter="29">
+		<weakLearner>SingleStumpLearner</weakLearner>
+		<alpha>0.19810529998</alpha>
+		<vArray size="10">
+			<default>0</default>
+			<class id="0">-1</class>
+			<class id="1">-1</class>
+			<class id="2">-1</class>
+			<class id="3">-1</class>
+			<class id="4">-1</class>
+			<class id="5">-1</class>
+			<class id="6">-1</class>
+			<class id="7">-1</class>
+			<class id="8">1</class>
+			<class id="9">-1</class>
+		</vArray>
+		<column>a04</column>
+		<threshold>25.5</threshold>
+	</weakhyp>
+	<!-- ################################## -->
 </multiboost>
