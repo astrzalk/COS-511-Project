@@ -143,6 +143,7 @@ class AdaBoostMH:
             h_loss = np.sum(np.multiply(W, 1*indicator_bool))
         return h_loss
 
+
     def run_schapire(self, T, clf, W_init, verbose=False):
         """
         Input
@@ -314,7 +315,7 @@ class AdaBoostMH:
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
         Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
-        k = self.k
+        n_tr, n_te, k = self.n_tr, self.n_te, self.k
 
         # Compute initial distributions
         raveled = False # False in Factorized Interpretation
@@ -330,11 +331,11 @@ class AdaBoostMH:
             gammas.append(gamma_t)
             # Check that the below two are arrays of size N_tr(te) by k
             # might need to add a transpose to the end
-            h_t_tr = np.array([alpha_t * phi(X_train[i, :]) * v for i in range(self.n_tr)])
-            h_t_te = np.array([alpha_t * phi(X_test[i, :]) * v for i in range(self.n_te)])
+            h_t_tr = np.array([alpha_t * phi(X_train[i, :]) * v for i in range(n_tr)])
+            h_t_te = np.array([alpha_t * phi(X_test[i, :]) * v for i in range(n_te)])
             h_ts_tr.append(h_t_tr)
             h_ts_te.append(h_t_te)
-            assert (h_t_tr.shape == (self.n_tr, k)), "The shape of h_t_tr needs to be transposed."
+            assert (h_t_tr.shape == (n_tr, k)), "The shape of h_t_tr needs to be transposed."
 
             # Update D_t
             alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
