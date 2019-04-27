@@ -47,6 +47,16 @@ def get_Wts_and_vts(rel_path, which_data_set):
     vts = get_array_lists(v_dir)
     return (Wts, vts)
 
+# pendigits rf file >5 1 <= 5 -1
+def get_Gammats(rel_path, ):
+    """TODO: Docstring for get_Gammats.
+    Returns
+    -------
+    TODO
+
+    """
+    pass
+
 if __name__ == "__main__":
     rel_path = "../"
     # Check fetching of pen data is right

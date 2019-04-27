@@ -23,11 +23,13 @@ class AdaBoostMH:
                             and weak hypothesis.
     """
 
-    def __init__(self, X_train, y_train, X_test, y_test):
+    def __init__(self, X_train, y_train, X_test, y_test, bias=[0.5,0.5]):
         self.X_tr, self.y_tr = X_train, y_train
         self.X_te, self.y_te = X_test, y_test
         self.n_tr, self.n_te = X_train.shape[0], X_test.shape[0]
         self.k = len(set(y_train).union(set(y_test))) # Number of unique classes
+        self.b = bias
+        self.smoothing_val = 1 / (self.n_tr * 0.01)
 
     def _get_multiclass_data(self, X, Y):
         """
@@ -79,20 +81,25 @@ class AdaBoostMH:
             Y[i, y[i]] *= -1 # Make the correct class become +1.
         return Y
 
-    def _get_init_distr(self, normal_init, raveled, use_train):
+    def _get_init_distr(self, init_scheme, raveled, use_train, bias):
         """ Computes initial distribution over examples and labels.
 
         Parameters
         ----------
-        normal_init: Boolean
-                     True if using uniform initialization scheme,
-                     False if using asymmetric initialization scheme.
+        init_scheme: Str
+                     'unif' if using uniform initialization scheme,
+                     'bal' if using balanced initialization scheme,
+                     'asym' if using unorthodox init scheme, assumes k = 2.
         raveled: Boolean
                  True if we need to return (n*k, ) output,
                  False if we need to return (n, k) output.
         use_train: Boolean
                    True if using number of training examples,
                    False if using number of testing examples.
+        bias: list
+              A 2-element list that contains which initial weights
+              get placed on each class, for example bias = [0.5, 0.5]
+              the default assumes uniform weighting.
         Output
         ------
         W: numpy-array, either (n*k,) or (n,k)
@@ -104,9 +111,9 @@ class AdaBoostMH:
             n = self.n_te
         k = self.k
 
-        if normal_init:
+        if init_scheme == 'unif':
             W = np.ones((n, k)) * (1 / (n * k))
-        else:
+        elif init_scheme == 'bal':
             W = np.ones((n, k)) * 0.5 * (1 / (n * (k - 1)))
             if use_train:
                 for i in range(n):
@@ -114,6 +121,8 @@ class AdaBoostMH:
             else:
                 for i in range(n):
                     W[i, self.y_te[i]] *= (k - 1)
+        elif init_scheme == 'asym':
+            W = np.ones((n, 2)) * (1 / n) * bias
 
         if raveled:
             W = np.ravel(W, order='F')
@@ -144,6 +153,35 @@ class AdaBoostMH:
         return h_loss
 
 
+    def _get_alpha_and_energy(self, gamma):
+        """Calcualtes alpha and energy a la kegl.
+
+        Parameters
+        ----------
+        gamma : float
+                Calculated in weak_learner.
+
+        Returns
+        -------
+        (alpha, Z) : tuple of floats
+                     Calculates alpha and energy the way
+                     kegl does it in the multiboost code.
+        """
+        # In kegl's code eps_min and eps_pls are defined as
+        # eps_min: The error rate of the weak learner, and
+        # eps_pls: The correct rate of the weak learner.
+        # These two variables seem to act like 1 - gamma, and 1 + gamma
+        # respectively, so that is how I am treating them.
+        # The corresponding code in Multiboost is located on lines 150-200
+        # in MutliBoost/src/WeakLearners/BaseLearner.cpp.
+        delta = self.smoothing_val
+        eps_pls = 1 + gamma
+        eps_min = 1 - gamma
+        alpha = 0.5 * np.log((eps_pls + delta) / (eps_min + delta))
+        Z = 2 * np.sqrt(eps_min * eps_pls) + (1 - eps_min - eps_pls)
+        return (alpha, Z)
+
+    # DON'T LOOK HERE
     def run_schapire(self, T, clf, W_init, verbose=False):
         """
         Input
@@ -208,6 +246,7 @@ class AdaBoostMH:
         test_error = self._get_ham_loss(w_init_te, H_test, y_test_m, unravel=False)
         return (train_error, test_error, gammas, D_ts)
 
+    # DON'T LOOK HERE
     def run_kegl(self, T, clf, W_init, verbose=False):
         """
         Input
@@ -311,35 +350,37 @@ class AdaBoostMH:
         return (H, H_test, train_error, test_error, gammas, D_ts)
         #return (train_error, test_error, gammas, D_ts)
 
+    # GOOD METHOD, LOOK HERE
     def run_factorized(self, T, weak_learner, W_init, verbose=False):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
         Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
         n_tr, n_te, k = self.n_tr, self.n_te, self.k
+        bias = self.b
 
         # Compute initial distributions
         raveled = False # False in Factorized Interpretation
-        D_t = self._get_init_distr(W_init, raveled, use_train=True)
+        init_d_t_train = True # Use training data
+        D_t = self._get_init_distr(W_init, raveled, init_d_t_train, bias)
 
-        h_ts_tr, h_ts_te, gammas, D_ts = [], [], [], [D_t]
+        h_ts_tr, h_ts_te, gammas, D_ts, vts = [], [], [], [D_t], []
         for t in range(T):
             if verbose:
                 print("Round {}".format(t + 1), flush=True)
             # Fit weak learner to data
             alpha_t, v, phi, gamma_t = weak_learner(X_train, Y_train, D_t)
+            vts.append(v)
             assert (isinstance(v, np.ndarray)), "Make v a numpy array."
             gammas.append(gamma_t)
-            # Check that the below two are arrays of size N_tr(te) by k
-            # might need to add a transpose to the end
+
+            # Use weak learner to make predictions on train and test
             h_t_tr = np.array([alpha_t * phi(X_train[i, :]) * v for i in range(n_tr)])
             h_t_te = np.array([alpha_t * phi(X_test[i, :]) * v for i in range(n_te)])
             h_ts_tr.append(h_t_tr)
             h_ts_te.append(h_t_te)
-            assert (h_t_tr.shape == (n_tr, k)), "The shape of h_t_tr needs to be transposed."
 
             # Update D_t
-            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
-            Z_t = np.sqrt(1 - np.square(gamma_t))
+            alpha_t, Z_t = self._get_alpha_and_energy(gamma_t)
             update = np.exp(-alpha_t * np.multiply(Y_train, h_t_tr)) / Z_t
             D_t = np.multiply(D_t, update)
             D_ts.append(D_t)
@@ -348,8 +389,8 @@ class AdaBoostMH:
         # Calculate the error of H
         # We could make the below cleaner by implementing a _get_error
         # method. It just needs W_init to become an instance variable.
-        w_init_tr = self._get_init_distr(W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
+        w_init_tr = self._get_init_distr(W_init, raveled, True, bias)
+        w_init_te = self._get_init_distr(W_init, raveled, False, bias)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        return (H, H_test, train_error, test_error, gammas, D_ts)
+        return (train_error, test_error, gammas, D_ts)
