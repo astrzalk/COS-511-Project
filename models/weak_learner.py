@@ -33,6 +33,35 @@ def stump(j, b):
         return 1 if x[j] >= b else -1
     return phi
 
+def get_alpha_and_energy(N, gamma):
+    """Calcualtes alpha and energy a la kegl.
+
+    Parameters
+    ----------
+    N : Number of training examples
+    gamma : float
+            Calculated in weak_learner.
+
+    Returns
+    -------
+    (alpha, Z) : tuple of floats
+                 Calculates alpha and energy the way
+                 kegl does it in the multiboost code.
+    """
+    # In kegl's code eps_min and eps_pls are defined as
+    # eps_min: The error rate of the weak learner, and
+    # eps_pls: The correct rate of the weak learner.
+    # These two variables seem to act like 1 - gamma, and 1 + gamma
+    # respectively, so that is how I am treating them.
+    # The corresponding code in Multiboost is located on lines 150-200
+    # in MutliBoost/src/WeakLearners/BaseLearner.cpp.
+    breakpoint()
+    delta = 1 / (N * 0.01)
+    eps_pls = 1 + gamma
+    eps_min = 1 - gamma
+    alpha = 0.5 * np.log((eps_pls + delta) / (eps_min + delta))
+    Z = 2 * np.sqrt(eps_min * eps_pls) + (1 - eps_min - eps_pls)
+    return (alpha, Z)
 
 # This is the main function that implements the base learner
 def stump_base(X,Y,W):
@@ -45,29 +74,37 @@ def stump_base(X,Y,W):
     """
 
     # Make sure phi = stump(j^*, b_{j^*})
+    N = X.shape[0]
     d = X.shape[1]
     k = Y.shape[1]
 
     # Edge of constant classifier
     gamma_vec_init = np.sum(np.multiply(Y,W), axis = 0)
 
+    b = -np.inf
+    best_j = 0
     # Iterate across features and keep the stump that minimizes the energy Z
     best_Z = np.inf
     for j in range(d):
         s = np.sort(X[:,j]) # Get sorted column j to find best threshold to split on
+        inds = np.argsort(X[:, j])
+        Y_s = Y[inds, :]
+        W_s = W[inds, :]
 
-        (v, b, gamma) = best_stump(s, Y, W, gamma_vec_init)
-        alpha = 0.5 * np.log((1 + gamma) / (1 - gamma))
+        (v, b, gamma) = best_stump(s, Y_s, W_s, gamma_vec_init)
+        alpha, Z = get_alpha_and_energy(N, gamma)
+        # alpha = 0.5 * np.log((1 + gamma) / (1 - gamma))
+        # Z = np.sqrt(1 - np.square(gamma))
         phi = stump(j, b)
-        Z = np.sqrt(1 - np.square(gamma)) # TODO: Not sure about this step
 
         if Z < best_Z:
             v_best = v
             phi_best = phi
+            b_best = b
             alpha_best = alpha
             gamma_best = gamma
             best_Z = Z
-
+            best_j = j
     return (alpha_best, v_best, phi_best, gamma_best)
 
 # This is the helper function for stump_base
@@ -79,7 +116,6 @@ def best_stump(s, Y, W, gamma_vec_init):
     gamma_vec_init: N by 1, numpy-like array, edge of constant classifer
     returns: v, b, gamma
     """
-    l1_norm = lambda x: np.linalg.norm(x, ord=1)
     gamma_vec_best = np.copy(gamma_vec_init)
     gamma_vec = np.copy(gamma_vec_init)
     b_best = -1 * np.inf
@@ -91,9 +127,9 @@ def best_stump(s, Y, W, gamma_vec_init):
         gamma_vec = gamma_vec - 2.0 * W_Y[i, :]
 
         if s[i] != s[i+1]:
-            if l1_norm(gamma_vec) > l1_norm(gamma_vec_best):
+            if np.sum(np.abs(gamma_vec)) > np.sum(np.abs(gamma_vec_best)):
                 gamma_vec_best = np.copy(gamma_vec)
                 b_best = 0.5 * (s[i] + s[i+1])
 
-    v_best = np.sign(np.copy(gamma_vec_best))
-    return (v_best, b_best, l1_norm(gamma_vec_best))
+    v_best = np.sign(np.copy(gamma_vec_best)) # assuming this is right intrepretation
+    return (v_best, b_best, np.sum(np.abs(gamma_vec_best)))
