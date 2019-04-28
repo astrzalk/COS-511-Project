@@ -153,34 +153,6 @@ class AdaBoostMH:
         return h_loss
 
 
-    def _get_alpha_and_energy(self, gamma):
-        """Calcualtes alpha and energy a la kegl.
-
-        Parameters
-        ----------
-        gamma : float
-                Calculated in weak_learner.
-
-        Returns
-        -------
-        (alpha, Z) : tuple of floats
-                     Calculates alpha and energy the way
-                     kegl does it in the multiboost code.
-        """
-        # In kegl's code eps_min and eps_pls are defined as
-        # eps_min: The error rate of the weak learner, and
-        # eps_pls: The correct rate of the weak learner.
-        # These two variables seem to act like 1 - gamma, and 1 + gamma
-        # respectively, so that is how I am treating them.
-        # The corresponding code in Multiboost is located on lines 150-200
-        # in MutliBoost/src/WeakLearners/BaseLearner.cpp.
-        delta = self.smoothing_val
-        eps_pls = 1 + gamma
-        eps_min = 1 - gamma
-        alpha = 0.5 * np.log((eps_pls + delta) / (eps_min + delta))
-        Z = 2 * np.sqrt(eps_min * eps_pls) + (1 - eps_min - eps_pls)
-        return (alpha, Z)
-
     # DON'T LOOK HERE
     def run_schapire(self, T, clf, W_init, verbose=False):
         """
@@ -351,7 +323,7 @@ class AdaBoostMH:
         #return (train_error, test_error, gammas, D_ts)
 
     # GOOD METHOD, LOOK HERE
-    def run_factorized(self, T, weak_learner, W_init, verbose=False):
+    def run_factorized(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
         Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
@@ -365,10 +337,10 @@ class AdaBoostMH:
 
         h_ts_tr, h_ts_te, gammas, D_ts, vts = [], [], [], [D_t], []
         for t in range(T):
-            if verbose:
+            if verbose in (1,2):
                 print("Round {}".format(t + 1), flush=True)
             # Fit weak learner to data
-            alpha_t, v, phi, gamma_t = weak_learner(X_train, Y_train, D_t)
+            alpha_t, v, phi, gamma_t, b, j = weak_learner(X_train, Y_train, D_t)
             vts.append(v)
             assert (isinstance(v, np.ndarray)), "Make v a numpy array."
             gammas.append(gamma_t)
@@ -380,9 +352,11 @@ class AdaBoostMH:
             h_ts_te.append(h_t_te)
 
             # Update D_t
-            alpha_t, Z_t = self._get_alpha_and_energy(gamma_t)
-            update = np.exp(-alpha_t * np.multiply(Y_train, h_t_tr)) / Z_t
+            # if verbose == 2:
+            #     print("alpha is {}\nEnergy is {}\nv is {}\nb is {}\n col is {}".format(alpha_t, energy_t, v, b, j))
+            update = np.exp(-1 * np.multiply(Y_train, h_t_tr))
             D_t = np.multiply(D_t, update)
+            D_t /= np.sum(D_t)
             D_ts.append(D_t)
         H = sum(h_ts_tr)
         H_test = sum(h_ts_te)

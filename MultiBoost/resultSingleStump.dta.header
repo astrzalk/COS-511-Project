@@ -1,5 +1,5 @@
-t	edge	edge	time	
+t	ham		ham	time	
 
 Column description:
 -------------------
-
+ham: Hamming Error
