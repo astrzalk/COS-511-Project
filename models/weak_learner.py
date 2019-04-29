@@ -80,9 +80,9 @@ def stump_base(X,Y,W):
     gamma_vec_init = np.sum(np.multiply(Y,W), axis = 0)
 
     b = -np.inf
-    best_j = 0
+    j_best = 0
     # Iterate across features and keep the stump that minimizes the energy Z
-    best_Z = np.inf
+    Z_best = np.inf
     for j in range(d):
         s = np.sort(X[:,j]) # Get sorted column j to find best threshold to split on
         # Reorder rows of Y and W by sorted order of jth column of X
@@ -94,15 +94,15 @@ def stump_base(X,Y,W):
         phi = stump(j, b)
         alpha, Z = get_alpha_and_energy(N, W, Y, phi, X, v)
 
-        if Z < best_Z:
+        if Z < Z_best:
             v_best = v
             phi_best = phi
             b_best = b
             alpha_best = alpha
             gamma_best = gamma
-            best_Z = Z
-            best_j = j
-    return (alpha_best, v_best, phi_best, gamma_best, b_best, best_j)
+            Z_best = Z
+            j_best = j
+    return (alpha_best, Z_best, v_best, phi_best, gamma_best, b_best, j_best)
 
 # This is the helper function for stump_base
 def best_stump(s, Y, W, gamma_vec_init):

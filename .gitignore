@@ -4,3 +4,5 @@ __pycache__
 *.xml
 *.dta
 *.dta.header
+*.o
+*.a

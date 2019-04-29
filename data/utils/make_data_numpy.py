@@ -15,12 +15,12 @@ def save_csv_as_np(data_path, save_path, filename):
     """
     df = pd.read_csv(data_path, header=None)
     np_array = df.values # Convert to numpy array
-    if 'train' in filename:
+    #if 'train' in filename:
         #assert(np_array.shape[0] == 7494)
-        assert(np_array.shape[0] == 6238)
-    else:
+        #assert(np_array.shape[0] == 6238)
+    #else:
         #assert(np_array.shape[0] == 3498)
-        assert(np_array.shape[0] == 1559)
+        #assert(np_array.shape[0] == 1559)
 
     np.save(save_path + filename + '_data.npy', np_array[:, :-1])
     np.save(save_path + filename + '_labels.npy', np_array[:, -1])
@@ -31,10 +31,17 @@ def main():
     #data_path_test = '../pendigits.tes'
     #save_csv_as_np(data_path_train, '../', 'pendigits_train')
     #save_csv_as_np(data_path_test, '../', 'pendigits_test')
-    data_path_train = '../isolet/isolet.tra'
-    data_path_test = '../isolet/isolet.tes'
-    save_csv_as_np(data_path_train, '../isolet/', 'isolet_train')
-    save_csv_as_np(data_path_test, '../isolet/', 'isolet_test')
+    #data_path_train = '../isolet/isolet.tra'
+    #data_path_test = '../isolet/isolet.tes'
+    #save_csv_as_np(data_path_train, '../isolet/', 'isolet_train')
+    #save_csv_as_np(data_path_test, '../isolet/', 'isolet_test')
+
+    data_path_train = '../synthTernary/synthTernary.tra'
+    data_path_test = '../synthTernary/synthTernary.tes'
+    save_csv_as_np(data_path_train, '../synthTernary/', 'synthTernary_train')
+    save_csv_as_np(data_path_test, '../synthTernary/', 'synthTernary_test')
+
+
 
 if __name__ == "__main__":
 # Data should look like the following

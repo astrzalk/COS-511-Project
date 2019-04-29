@@ -23,7 +23,7 @@ class AdaBoostMH:
                             and weak hypothesis.
     """
 
-    def __init__(self, X_train, y_train, X_test, y_test, bias=[0.5,0.5]):
+    def __init__(self, X_train, y_train, X_test, y_test, bias=0.5):
         self.X_tr, self.y_tr = X_train, y_train
         self.X_te, self.y_te = X_test, y_test
         self.n_tr, self.n_te = X_train.shape[0], X_test.shape[0]
@@ -89,17 +89,17 @@ class AdaBoostMH:
         init_scheme: Str
                      'unif' if using uniform initialization scheme,
                      'bal' if using balanced initialization scheme,
-                     'asym' if using unorthodox init scheme, assumes k = 2.
+                     'asym' if using unorthodox init scheme,
+                     'rand' if using random init scheme
         raveled: Boolean
                  True if we need to return (n*k, ) output,
                  False if we need to return (n, k) output.
         use_train: Boolean
                    True if using number of training examples,
                    False if using number of testing examples.
-        bias: list
-              A 2-element list that contains which initial weights
-              get placed on each class, for example bias = [0.5, 0.5]
-              the default assumes uniform weighting.
+        bias: float
+                   Float value in [0,1] that assigns the amount of weight to put
+                   on the true label.
         Output
         ------
         W: numpy-array, either (n*k,) or (n,k)
@@ -122,8 +122,17 @@ class AdaBoostMH:
                 for i in range(n):
                     W[i, self.y_te[i]] *= (k - 1)
         elif init_scheme == 'asym':
-            W = np.ones((n, 2)) * (1 / n) * bias
-
+            W = np.ones((n, k)) * (1-bias) * (1 / (n * (k - 1)))
+            if use_train:
+                for i in range(n):
+                    W[i, self.y_tr[i]] *= (((k - 1) / (1-bias)) * bias)
+            else:
+                for i in range(n):
+                    W[i, self.y_te[i]] *= (((k - 1) / (1-bias)) * bias)
+        elif init_scheme == 'rand':
+            W = np.random.rand(n, k)
+            W = W / np.sum(W)
+ 
         if raveled:
             W = np.ravel(W, order='F')
             W = W.reshape((W.shape[0],)) # guarantee that it is (n*k, )
@@ -335,13 +344,13 @@ class AdaBoostMH:
         init_d_t_train = True # Use training data
         D_t = self._get_init_distr(W_init, raveled, init_d_t_train, bias)
 
-        h_ts_tr, h_ts_te, gammas, D_ts, vts = [], [], [], [D_t], []
+        h_ts_tr, h_ts_te, gammas, D_ts, v_ts = [], [], [], [D_t], []
         for t in range(T):
             if verbose in (1,2):
                 print("Round {}".format(t + 1), flush=True)
             # Fit weak learner to data
-            alpha_t, v, phi, gamma_t, b, j = weak_learner(X_train, Y_train, D_t)
-            vts.append(v)
+            alpha_t, energy_t, v, phi, gamma_t, b, j = weak_learner(X_train, Y_train, D_t)
+            v_ts.append(v)
             assert (isinstance(v, np.ndarray)), "Make v a numpy array."
             gammas.append(gamma_t)
 
@@ -352,8 +361,8 @@ class AdaBoostMH:
             h_ts_te.append(h_t_te)
 
             # Update D_t
-            # if verbose == 2:
-            #     print("alpha is {}\nEnergy is {}\nv is {}\nb is {}\n col is {}".format(alpha_t, energy_t, v, b, j))
+            if verbose == 2:
+                 print("alpha is {}\nEdge is {}\nEnergy is {}\nv is {}\nb is {}\n col is {}".format(alpha_t, gamma_t, energy_t, v, b, j))
             update = np.exp(-1 * np.multiply(Y_train, h_t_tr))
             D_t = np.multiply(D_t, update)
             D_t /= np.sum(D_t)
@@ -363,8 +372,8 @@ class AdaBoostMH:
         # Calculate the error of H
         # We could make the below cleaner by implementing a _get_error
         # method. It just needs W_init to become an instance variable.
-        w_init_tr = self._get_init_distr(W_init, raveled, True, bias)
-        w_init_te = self._get_init_distr(W_init, raveled, False, bias)
+        w_init_tr = self._get_init_distr('unif', raveled, True, bias)
+        w_init_te = self._get_init_distr('unif', raveled, False, bias)
         train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
         test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        return (train_error, test_error, gammas, D_ts)
+        return (train_error, test_error, gammas, v_ts, D_ts)
