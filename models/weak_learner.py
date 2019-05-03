@@ -130,3 +130,82 @@ def best_stump(s, Y, W, gamma_vec_init):
 
     v_best = np.sign(np.copy(gamma_vec_best))
     return (v_best, b_best, np.sum(np.abs(gamma_vec_best)))
+
+
+
+
+
+
+
+
+# This is the main function that implements the base learner
+def stump_base_no_vote(X,Y,W):
+    """
+    X: N by d, numpy-like array, training data
+    Y: N by k, numpy-like array, label matrix
+    W: N by k, numpy-like array, weight matrix
+    returns: alpha, v, phi, gamma; Make sure v is a numpy array
+
+    """
+
+    N = X.shape[0]
+    d = X.shape[1]
+    k = Y.shape[1]
+
+    # Edge of constant classifier
+    gamma_vec_init = np.sum(np.multiply(Y,W), axis = 0)
+
+    b = -np.inf
+    j_best = 0
+    # Iterate across features and keep the stump that minimizes the energy Z
+    Z_best = np.inf
+    for j in range(d):
+        s = np.sort(X[:,j]) # Get sorted column j to find best threshold to split on
+        # Reorder rows of Y and W by sorted order of jth column of X
+        inds = np.argsort(X[:, j])
+        Y_s = Y[inds, :]
+        W_s = W[inds, :]
+
+        (b, gamma) = best_stump_no_vote(s, Y_s, W_s, gamma_vec_init)
+        phi = stump(j, b)
+        alpha, Z = get_alpha_and_energy(N, W, Y, phi, X, np.ones(k))
+        
+        if Z < Z_best:
+            phi_best = phi
+            b_best = b
+            alpha_best = alpha
+            gamma_best = gamma
+            Z_best = Z
+            j_best = j
+    
+    return (alpha_best, Z_best, phi_best, gamma_best, b_best, j_best)
+
+# This is the helper function for stump_base
+def best_stump_no_vote(s, Y, W, gamma_vec_init):
+    """
+    s: N by 1, numpy-like array, sorted column of X
+    Y: N by k, numpy-like array, label matrix
+    W: N by k, numpy-like array, weight matrix
+    gamma_vec_init: N by 1, numpy-like array, edge of constant classifer
+    returns: v, b, gamma
+    """
+    gamma_vec_best = np.copy(gamma_vec_init)
+    gamma_vec = np.copy(gamma_vec_init)
+    b_best = -1 * np.inf
+
+    n = Y.shape[0]
+    k = Y.shape[1]
+    W_Y = np.multiply(W, Y)
+        
+    for i in range(n):
+        gamma_vec = gamma_vec - 2.0 * W_Y[i, :]
+
+        if np.sum(gamma_vec) > np.sum(gamma_vec_best):
+            if i == n-1:
+                b_best = np.inf
+                gamma_vec_best = np.copy(gamma_vec)
+            elif s[i] != s[i+1]:
+                b_best = 0.5 * (s[i] + s[i+1])
+                gamma_vec_best = np.copy(gamma_vec)
+                
+    return (b_best, np.sum(gamma_vec_best))

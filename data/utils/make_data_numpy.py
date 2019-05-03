@@ -36,10 +36,10 @@ def main():
     #save_csv_as_np(data_path_train, '../isolet/', 'isolet_train')
     #save_csv_as_np(data_path_test, '../isolet/', 'isolet_test')
 
-    data_path_train = '../synthTernary/synthTernary.tra'
-    data_path_test = '../synthTernary/synthTernary.tes'
-    save_csv_as_np(data_path_train, '../synthTernary/', 'synthTernary_train')
-    save_csv_as_np(data_path_test, '../synthTernary/', 'synthTernary_test')
+    data_path_train = '../synthHalf/train.tra'
+    data_path_test = '../synthHalf/test.tes'
+    save_csv_as_np(data_path_train, '../synthHalf/', 'train')
+    save_csv_as_np(data_path_test, '../synthHalf/', 'test')
 
 
 

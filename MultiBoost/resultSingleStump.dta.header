@@ -1,6 +1,5 @@
-t	edge	wha	edge	wha	time	
+t	ham	ham	time	
 
 Column description:
 -------------------
-
-wha: Weighted Hamming Error
+ham: Hamming Error

@@ -30,7 +30,9 @@ class AdaBoostMH:
         self.k = len(set(y_train).union(set(y_test))) # Number of unique classes
         self.b = bias
         self.smoothing_val = 1 / (self.n_tr * 0.01)
-
+        self.w_init_tr = self._get_init_distr('unif', False, True, bias)
+        self.w_init_te = self._get_init_distr('unif', False, False, bias)
+        
     def _get_multiclass_data(self, X, Y):
         """
         Input
@@ -227,31 +229,91 @@ class AdaBoostMH:
         test_error = self._get_ham_loss(w_init_te, H_test, y_test_m, unravel=False)
         return (train_error, test_error, gammas, D_ts)
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    def run_kegl(self, T, weak_learner, W_init, verbose=0):
+        # Map instance variables to local variables to be more explicit.
+        X_train, X_test = self.X_tr, self.X_te
+        Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
+        n_tr, n_te, k = self.n_tr, self.n_te, self.k
+        bias = self.b
+
+        # Compute initial distributions
+        raveled = False # False in Factorized Interpretation
+        init_d_t_train = True # Use training data
+        D_t = self._get_init_distr(W_init, raveled, init_d_t_train, bias)
+        
+        h_ts_tr, h_ts_te, gammas, D_ts, = [], [], [], [D_t]
+        train_errs, test_errs = [], []
+        for t in range(T):
+            if verbose in (1,2):
+                print("Round {}".format(t + 1), flush=True)
+                
+            # Fit weak learner to data
+            h_t = []
+            gamma_t = 0.0
+            for l in range(k):
+                _, _, phi, gamma, b, j = weak_learner(X_train, np.atleast_2d(Y_train[:, l]).T, np.atleast_2d(D_t[:, l]).T)
+                print("{}   gamma = {}  b = {},  j = {}".format(l,gamma,b,j))
+                h_t.append(phi)
+                gamma_t = gamma_t + gamma
+            gammas.append(gamma_t)
+
+            # Get alpha
+            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+            
+            # Use weak learner to make predictions on train and test
+            h_t_tr = np.array([[alpha_t * h_t[l](X_train[i, :]) for l in range(k)] for i in range(n_tr)])
+            h_t_te = np.array([[alpha_t * h_t[l](X_test[i, :]) for l in range(k)] for i in range(n_te)])
+            h_ts_tr.append(h_t_tr)
+            h_ts_te.append(h_t_te)
+
+            # Update D_t
+            if verbose == 2:
+                 print("alpha is {}\nEdge is {}\n".format(alpha_t, gamma_t))
+            update = np.exp(-1 * np.multiply(Y_train, h_t_tr))
+            #print(D_t)
+            D_t = np.multiply(D_t, update)
+            D_t /= np.sum(D_t)
+            D_ts.append(D_t)
+            
+            # Get error
+            H = sum(h_ts_tr)
+            H_test = sum(h_ts_te)
+            # Calculate the error of H
+            # We could make the below cleaner by implementing a _get_error
+            # method. It just needs W_init to become an instance variable.
+            train_error = self._get_ham_loss(self.w_init_tr, H, Y_train, unravel=True)
+            test_error = self._get_ham_loss(self.w_init_te, H_test, Y_test, unravel=True)
+            train_errs.append(train_error)
+            test_errs.append(test_error)
+        return (train_errs, test_errs, gammas, D_ts)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     # DON'T LOOK HERE
-    def run_kegl(self, T, clf, W_init, verbose=False):
-        """
-        Input
-        -----
-        T: Int
-           Number of rounds to do boosting.
-        clf: sklearn classifier, expected just DecisionTreeClassifier.
-             Base (or weak) classifier.
-        W_init: Boolean
-                True if using uniform weighting scheme, false if using
-                the assymetric scheme given by equation (3) in return of adaboost
-                paper.
-        verbose: Boolean
-                 True if you want to print each round as it starts,
-                 False otherwise.
-        Returns
-        -------
-        train_error: float
-                     The training error for T rounds of boosting.
-        test_error: float
-                     The testing error for T rounds of boosting.
-        gammas: list
-                All T gammas calculated during boosting.
-        """
+    def run_kegl_bad(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
         Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
@@ -345,6 +407,7 @@ class AdaBoostMH:
         D_t = self._get_init_distr(W_init, raveled, init_d_t_train, bias)
 
         h_ts_tr, h_ts_te, gammas, D_ts, v_ts = [], [], [], [D_t], []
+        train_errs, test_errs = [], []
         for t in range(T):
             if verbose in (1,2):
                 print("Round {}".format(t + 1), flush=True)
@@ -367,13 +430,15 @@ class AdaBoostMH:
             D_t = np.multiply(D_t, update)
             D_t /= np.sum(D_t)
             D_ts.append(D_t)
-        H = sum(h_ts_tr)
-        H_test = sum(h_ts_te)
-        # Calculate the error of H
-        # We could make the below cleaner by implementing a _get_error
-        # method. It just needs W_init to become an instance variable.
-        w_init_tr = self._get_init_distr('unif', raveled, True, bias)
-        w_init_te = self._get_init_distr('unif', raveled, False, bias)
-        train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
-        test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-        return (train_error, test_error, gammas, v_ts, D_ts)
+            
+            # Get error
+            H = sum(h_ts_tr)
+            H_test = sum(h_ts_te)
+            # Calculate the error of H
+            # We could make the below cleaner by implementing a _get_error
+            # method. It just needs W_init to become an instance variable.
+            train_error = self._get_ham_loss(self.w_init_tr, H, Y_train, unravel=True)
+            test_error = self._get_ham_loss(self.w_init_te, H_test, Y_test, unravel=True)
+            train_errs.append(train_error)
+            test_errs.append(test_error)
+        return (train_errs, test_errs, gammas, v_ts, D_ts)

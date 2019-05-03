@@ -1,0 +1,14 @@
+% UCI PenDigits
+
+@RELATION pendigits
+
+% 1 numeric descriptors
+@ATTRIBUTE a01 NUMERIC
+@ATTRIBUTE class_one NUMERIC
+@ATTRIBUTE class_two NUMERIC
+
+@DATA
+1, -0.125, 0.875
+2, 0.875, -0.125
+3, -0.125, 0.875
+4, 0.875, -0.125
