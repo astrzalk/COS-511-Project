@@ -258,26 +258,32 @@ class AdaBoostMH:
                 
             # Fit weak learner to data
             h_t = []
+            alphas_t = []
             gamma_t = 0.0
             for l in range(k):
-                _, _, phi, gamma, b, j = weak_learner(X_train, np.atleast_2d(Y_train[:, l]).T, np.atleast_2d(D_t[:, l]).T)
+                alpha, _, phi, gamma, b, j = weak_learner(X_train, np.atleast_2d(Y_train[:, l]).T, np.atleast_2d(D_t[:, l]).T)
                 print("{}   gamma = {}  b = {},  j = {}".format(l,gamma,b,j))
+                print("Sum of weights in column = {}".format(np.sum(D_t[:,l])))
+                alphas_t.append(alpha)
                 h_t.append(phi)
                 gamma_t = gamma_t + gamma
             gammas.append(gamma_t)
 
             # Get alpha
-            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
+            #alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
             
             # Use weak learner to make predictions on train and test
-            h_t_tr = np.array([[alpha_t * h_t[l](X_train[i, :]) for l in range(k)] for i in range(n_tr)])
-            h_t_te = np.array([[alpha_t * h_t[l](X_test[i, :]) for l in range(k)] for i in range(n_te)])
+            #h_t_tr = np.array([[alpha_t * h_t[l](X_train[i, :]) for l in range(k)] for i in range(n_tr)])
+            #h_t_te = np.array([[alpha_t * h_t[l](X_test[i, :]) for l in range(k)] for i in range(n_te)])
+            h_t_tr = np.array([[alphas_t[l] * h_t[l](X_train[i, :]) for l in range(k)] for i in range(n_tr)])
+            h_t_te = np.array([[alphas_t[l] * h_t[l](X_test[i, :]) for l in range(k)] for i in range(n_te)])
             h_ts_tr.append(h_t_tr)
             h_ts_te.append(h_t_te)
 
             # Update D_t
             if verbose == 2:
-                 print("alpha is {}\nEdge is {}\n".format(alpha_t, gamma_t))
+                #print("alpha is {}\nEdge is {}\n".format(alpha_t, gamma_t))
+                print("alpha is {}\nEdge is {}\n".format(alphas_t, gamma_t))
             update = np.exp(-1 * np.multiply(Y_train, h_t_tr))
             #print(D_t)
             D_t = np.multiply(D_t, update)

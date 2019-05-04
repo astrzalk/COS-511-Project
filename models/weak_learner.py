@@ -200,7 +200,7 @@ def best_stump_no_vote(s, Y, W, gamma_vec_init):
     for i in range(n):
         gamma_vec = gamma_vec - 2.0 * W_Y[i, :]
 
-        if np.sum(gamma_vec) > np.sum(gamma_vec_best):
+        if np.sum(np.abs(gamma_vec)) > np.sum(np.abs(gamma_vec_best)):
             if i == n-1:
                 b_best = np.inf
                 gamma_vec_best = np.copy(gamma_vec)
