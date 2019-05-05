@@ -23,11 +23,11 @@ class AdaBoostMH:
                             and weak hypothesis.
     """
 
-    def __init__(self, X_train, y_train, X_test, y_test, bias=0.5):
+    def __init__(self, X_train, y_train, X_test, y_test, k, bias=0.5):
         self.X_tr, self.y_tr = X_train, y_train
         self.X_te, self.y_te = X_test, y_test
         self.n_tr, self.n_te = X_train.shape[0], X_test.shape[0]
-        self.k = len(set(y_train).union(set(y_test))) # Number of unique classes
+        self.k = k #len(set(y_train).union(set(y_test))) # Number of unique classes
         self.b = bias
         self.smoothing_val = 1 / (self.n_tr * 0.01)
         self.w_init_tr = self._get_init_distr('unif', False, True, bias)
@@ -113,24 +113,27 @@ class AdaBoostMH:
             n = self.n_te
         k = self.k
 
+        if use_train:
+            Y = self.y_tr
+        else:
+            Y = self.y_te
+        
         if init_scheme == 'unif':
             W = np.ones((n, k)) * (1 / (n * k))
         elif init_scheme == 'bal':
             W = np.ones((n, k)) * 0.5 * (1 / (n * (k - 1)))
             if use_train:
                 for i in range(n):
-                    W[i, self.y_tr[i]] *= (k - 1)
-            else:
-                for i in range(n):
-                    W[i, self.y_te[i]] *= (k - 1)
+                    for l in range(k):
+                        if Y[i, l] == 1.0:
+                            W[i,l] *= (k - 1)
         elif init_scheme == 'asym':
             W = np.ones((n, k)) * (1-bias) * (1 / (n * (k - 1)))
             if use_train:
                 for i in range(n):
-                    W[i, self.y_tr[i]] *= (((k - 1) / (1-bias)) * bias)
-            else:
-                for i in range(n):
-                    W[i, self.y_te[i]] *= (((k - 1) / (1-bias)) * bias)
+                    for l in range(k):
+                        if Y[i, l] == 1.0:
+                            W[i, l] *= (((k - 1) / (1-bias)) * bias)
         elif init_scheme == 'rand':
             W = np.random.rand(n, k)
             W = W / np.sum(W)
@@ -164,84 +167,12 @@ class AdaBoostMH:
         return h_loss
 
 
-    # DON'T LOOK HERE
-    def run_schapire(self, T, clf, W_init, verbose=False):
-        """
-        Input
-        -----
-        T: Int
-           Number of rounds to do boosting.
-        clf: sklearn classifier, expected just DecisionTreeClassifier
-             Base (or weak) classifier.
-        W_init: Boolean
-                True if using uniform weighting scheme, false if using
-                the assymetric scheme given by equation (3) in return of adaboost
-                paper.
-        verbose: Boolean
-                 True if you want to print rounds in training,
-                 False otherwise.
-        Returns
-        -------
-        train_error: float
-                     The training error for T rounds of boosting.
-        test_error: float
-                     The testing error for T rounds of boosting.
-        gammas: list
-                All T gammas calculated during boosting.
-        """
-        # Transform datasets so that data goes from (N, d) -> (N*k, d + 1)
-        # and labels go from (N, 1) -> (N*k, 1).
-        X_train_m, y_train_m = self._get_multiclass_data(self.X_tr, self.y_tr)
-        X_test_m, y_test_m = self._get_multiclass_data(self.X_te, self.y_te)
-        # Compute Initial Distributions
-        raveled = True # True in original interpretation.
-        D_t = self._get_init_distr(W_init, raveled, use_train=True)
-
-        h_ts, h_ts_te, gammas, D_ts = [], [], [], [D_t]
-        for t in range(T):
-            if verbose:
-                print("Round {}".format(t + 1))
-
-            h_t = clf.fit(X_train_m, y_train_m, sample_weight=D_t)
-
-            # Calculate gamma_t which is defined in original paper as
-            # \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l)
-            h_t_x_l = h_t.predict(X_train_m) # (N*k, )
-            h_t_x_l_te = h_t.predict(X_test_m) # (N*k, )
-            gamma_t = np.sum(np.multiply(np.multiply(D_t, y_train_m), h_t_x_l))
-            gammas.append(gamma_t)
-
-            # Update D_t
-            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
-            h_ts.append(alpha_t * h_t_x_l)
-            h_ts_te.append(alpha_t * h_t_x_l_te)
-            Z_t = np.sqrt(1 - np.square(gamma_t))
-            update = np.exp(-alpha_t * np.multiply(y_train_m, h_t_x_l)) / Z_t
-            D_t = np.multiply(D_t, update)
-            D_ts.append(D_t)
-        H = sum(h_ts)
-        H_test = sum(h_ts_te)
-
-        # Calculate the error of H
-        w_init_tr = self._get_init_distr(W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
-        train_error = self._get_ham_loss(w_init_tr, H, y_train_m, unravel=False)
-        test_error = self._get_ham_loss(w_init_te, H_test, y_test_m, unravel=False)
-        return (train_error, test_error, gammas, D_ts)
-
-    
-    
-    
-    
-    
-    
-    
-    
+ 
     
     def run_kegl(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
-        Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
+        Y_train, Y_test = self.y_tr, self.y_te
         n_tr, n_te, k = self.n_tr, self.n_te, self.k
         bias = self.b
 
@@ -309,101 +240,10 @@ class AdaBoostMH:
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    # DON'T LOOK HERE
-    def run_kegl_bad(self, T, weak_learner, W_init, verbose=0):
-        # Map instance variables to local variables to be more explicit.
-        X_train, X_test = self.X_tr, self.X_te
-        Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
-        k = self.k
-
-        # Compute initial distributions
-        raveled = False # False in Kegl's interpretation.
-        D_t = self._get_init_distr(W_init, raveled, use_train=True)
-
-        h_ts, h_ts_test, gammas, D_ts = [], [], [], [D_t]
-        for t in range(T):
-            if verbose:
-                print("Round {}".format(t + 1))
-
-            # Fit weak learner to data
-            h_t = clf(X_train, Y_train, D_t)
-
-            # Check that the below two are arrays of size N_tr(te) by k
-            # might need to add a transpose to the end
-            n = X_train.shape[0]
-            h_t_x_l = np.zeros((n,k))
-            for i in range(n):
-                for l in range(k):
-                    h_t_x_l[i,l] = h_t[l](X_train[i,:])
-
-            n = X_test.shape[0]
-            h_t_x_l_test = np.zeros((n,k))
-            for i in range(n):
-                for l in range(k):
-                    h_t_x_l_test[i,l] = h_t[l](X_test[i,:])
-
-            gamma_t = np.sum(np.multiply(np.multiply(D_t, Y_train), h_t_x_l))
-            gammas.append(gamma_t)
-            #assert (h_t_tr.shape == (self.n_tr, k)), "The shape of h_t_tr needs to be transposed."
-
-            # Update D_t
-            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
-            h_ts.append(alpha_t * h_t_x_l)
-            h_ts_test.append(alpha_t * h_t_x_l_test)
-            Z_t = np.sqrt(1 - np.square(gamma_t))
-            update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
-
-            D_t = np.multiply(D_t, update)
-            D_ts.append(D_t)
-
-            '''
-            # List with k classifiers
-            h_t = [clf.fit(X_train, Y_train[:, i], sample_weight=D_t[:, i])
-                    for i in range(k)]
-            # Compute gamma_t according to
-            # \sum_{i, l} D_t(i, l) Y_i[l] h_t(x_i, l)
-            h_t_x_l = np.array([h_t[i].predict(X_train) for i in range(k)]).T
-            h_t_x_l_test = np.array([h_t[i].predict(X_test) for i in range(k)]).T
-            gamma_t = np.sum(np.multiply(np.multiply(D_t, Y_train), h_t_x_l))
-            gammas.append(gamma_t)
-
-            print(h_t_x_l)
-
-            # Update D_t
-            alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
-            print(alpha_t)
-            h_ts.append(alpha_t * h_t_x_l)
-            h_ts_test.append(alpha_t * h_t_x_l_test)
-            Z_t = np.sqrt(1 - np.square(gamma_t))
-            update = np.exp(-alpha_t * np.multiply(Y_train, h_t_x_l)) / Z_t
-            D_t = np.multiply(D_t, update)
-            D_ts.append(D_t)
-            '''
-        H = sum(h_ts)
-        H_test = sum(h_ts_test)
-        # Calculate the error of H
-        w_init_tr = self._get_init_distr(W_init, raveled, use_train=True)
-        w_init_te = self._get_init_distr(W_init, raveled, use_train=False)
-        train_error = self._get_ham_loss(w_init_tr, H, Y_train, unravel=True)
-        test_error = self._get_ham_loss(w_init_te, H_test, Y_test, unravel=True)
-
-        return (H, H_test, train_error, test_error, gammas, D_ts)
-        #return (train_error, test_error, gammas, D_ts)
-
-    # GOOD METHOD, LOOK HERE
     def run_factorized(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
-        Y_train, Y_test = self._one_hot_labels(self.y_tr), self._one_hot_labels(self.y_te)
+        Y_train, Y_test = self.y_tr, self.y_te
         n_tr, n_te, k = self.n_tr, self.n_te, self.k
         bias = self.b
 
