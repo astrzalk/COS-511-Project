@@ -40,10 +40,10 @@ def save_csv_as_np(data_path, save_path, filename, k):
             y = [int(i) for i in y]
             x_s.append(x)
             y_s.append(y)
-    
+
     np_x_s = np.array(x_s)
     np_y_s = one_hot_labels(y_s, k)
-    
+
     #if 'train' in filename:
         #assert(np_array.shape[0] == 7494)
         #assert(np_array.shape[0] == 6238)

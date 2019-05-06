@@ -23,16 +23,16 @@ class AdaBoostMH:
                             and weak hypothesis.
     """
 
-    def __init__(self, X_train, y_train, X_test, y_test, k, bias=0.5):
+    def __init__(self, X_train, y_train, X_test, y_test, bias=0.5):
         self.X_tr, self.y_tr = X_train, y_train
         self.X_te, self.y_te = X_test, y_test
         self.n_tr, self.n_te = X_train.shape[0], X_test.shape[0]
-        self.k = k #len(set(y_train).union(set(y_test))) # Number of unique classes
+        self.k = len(set(y_train).union(set(y_test))) # Number of unique classes
         self.b = bias
         self.smoothing_val = 1 / (self.n_tr * 0.01)
         self.w_init_tr = self._get_init_distr('unif', False, True, bias)
         self.w_init_te = self._get_init_distr('unif', False, False, bias)
-        
+
     def _get_multiclass_data(self, X, Y):
         """
         Input
@@ -83,6 +83,7 @@ class AdaBoostMH:
             Y[i, y[i]] *= -1 # Make the correct class become +1.
         return Y
 
+
     def _get_init_distr(self, init_scheme, raveled, use_train, bias):
         """ Computes initial distribution over examples and labels.
 
@@ -117,7 +118,7 @@ class AdaBoostMH:
             Y = self.y_tr
         else:
             Y = self.y_te
-        
+
         if init_scheme == 'unif':
             W = np.ones((n, k)) * (1 / (n * k))
         elif init_scheme == 'bal':
@@ -137,7 +138,7 @@ class AdaBoostMH:
         elif init_scheme == 'rand':
             W = np.random.rand(n, k)
             W = W / np.sum(W)
- 
+
         if raveled:
             W = np.ravel(W, order='F')
             W = W.reshape((W.shape[0],)) # guarantee that it is (n*k, )
@@ -167,8 +168,6 @@ class AdaBoostMH:
         return h_loss
 
 
- 
-    
     def run_kegl(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
@@ -180,13 +179,13 @@ class AdaBoostMH:
         raveled = False # False in Factorized Interpretation
         init_d_t_train = True # Use training data
         D_t = self._get_init_distr(W_init, raveled, init_d_t_train, bias)
-        
+
         h_ts_tr, h_ts_te, gammas, D_ts, = [], [], [], [D_t]
         train_errs, test_errs = [], []
         for t in range(T):
             if verbose in (1,2):
                 print("Round {}".format(t + 1), flush=True)
-                
+
             # Fit weak learner to data
             h_t = []
             alphas_t = []
@@ -200,12 +199,7 @@ class AdaBoostMH:
                 gamma_t = gamma_t + gamma
             gammas.append(gamma_t)
 
-            # Get alpha
-            #alpha_t = 0.5 * np.log((1 + gamma_t) / (1 - gamma_t))
-            
             # Use weak learner to make predictions on train and test
-            #h_t_tr = np.array([[alpha_t * h_t[l](X_train[i, :]) for l in range(k)] for i in range(n_tr)])
-            #h_t_te = np.array([[alpha_t * h_t[l](X_test[i, :]) for l in range(k)] for i in range(n_te)])
             h_t_tr = np.array([[alphas_t[l] * h_t[l](X_train[i, :]) for l in range(k)] for i in range(n_tr)])
             h_t_te = np.array([[alphas_t[l] * h_t[l](X_test[i, :]) for l in range(k)] for i in range(n_te)])
             h_ts_tr.append(h_t_tr)
@@ -213,14 +207,12 @@ class AdaBoostMH:
 
             # Update D_t
             if verbose == 2:
-                #print("alpha is {}\nEdge is {}\n".format(alpha_t, gamma_t))
                 print("alpha is {}\nEdge is {}\n".format(alphas_t, gamma_t))
             update = np.exp(-1 * np.multiply(Y_train, h_t_tr))
-            #print(D_t)
             D_t = np.multiply(D_t, update)
             D_t /= np.sum(D_t)
             D_ts.append(D_t)
-            
+
             # Get error
             H = sum(h_ts_tr)
             H_test = sum(h_ts_te)
@@ -232,14 +224,14 @@ class AdaBoostMH:
             train_errs.append(train_error)
             test_errs.append(test_error)
         return (train_errs, test_errs, gammas, D_ts)
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
     def run_factorized(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
@@ -276,7 +268,7 @@ class AdaBoostMH:
             D_t = np.multiply(D_t, update)
             D_t /= np.sum(D_t)
             D_ts.append(D_t)
-            
+
             # Get error
             H = sum(h_ts_tr)
             H_test = sum(h_ts_te)

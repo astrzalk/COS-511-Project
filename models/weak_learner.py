@@ -132,15 +132,10 @@ def best_stump(s, Y, W, gamma_vec_init):
     return (v_best, b_best, np.sum(np.abs(gamma_vec_best)))
 
 
-
-
-
-
-
-
-# This is the main function that implements the base learner
 def stump_base_no_vote(X,Y,W):
     """
+    This is implementation that doesn't use a factorized stump.
+
     X: N by d, numpy-like array, training data
     Y: N by k, numpy-like array, label matrix
     W: N by k, numpy-like array, weight matrix
@@ -169,7 +164,7 @@ def stump_base_no_vote(X,Y,W):
         (b, gamma) = best_stump_no_vote(s, Y_s, W_s, gamma_vec_init)
         phi = stump(j, b)
         alpha, Z = get_alpha_and_energy(N, W, Y, phi, X, np.ones(k))
-        
+
         if Z < Z_best:
             phi_best = phi
             b_best = b
@@ -177,7 +172,7 @@ def stump_base_no_vote(X,Y,W):
             gamma_best = gamma
             Z_best = Z
             j_best = j
-    
+
     return (alpha_best, Z_best, phi_best, gamma_best, b_best, j_best)
 
 # This is the helper function for stump_base
@@ -196,7 +191,7 @@ def best_stump_no_vote(s, Y, W, gamma_vec_init):
     n = Y.shape[0]
     k = Y.shape[1]
     W_Y = np.multiply(W, Y)
-        
+
     for i in range(n):
         gamma_vec = gamma_vec - 2.0 * W_Y[i, :]
 
@@ -207,5 +202,5 @@ def best_stump_no_vote(s, Y, W, gamma_vec_init):
             elif s[i] != s[i+1]:
                 b_best = 0.5 * (s[i] + s[i+1])
                 gamma_vec_best = np.copy(gamma_vec)
-                
+
     return (b_best, np.sum(gamma_vec_best))
