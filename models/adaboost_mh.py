@@ -23,11 +23,12 @@ class AdaBoostMH:
                             and weak hypothesis.
     """
 
-    def __init__(self, X_train, y_train, X_test, y_test, bias=0.5):
+    def __init__(self, X_train, y_train, X_test, y_test, k, bias=0.5):
         self.X_tr, self.y_tr = X_train, y_train
         self.X_te, self.y_te = X_test, y_test
         self.n_tr, self.n_te = X_train.shape[0], X_test.shape[0]
-        self.k = len(set(y_train).union(set(y_test))) # Number of unique classes
+        self.k = max(y_train.shape[1], y_test.shape[1])
+        #k #len(set(y_train.tolist()).union(set(y_test.tolist()))) # Number of unique classes
         self.b = bias
         self.smoothing_val = 1 / (self.n_tr * 0.01)
         self.w_init_tr = self._get_init_distr('unif', False, True, bias)
