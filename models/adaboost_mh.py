@@ -28,61 +28,10 @@ class AdaBoostMH:
         self.X_te, self.y_te = X_test, y_test
         self.n_tr, self.n_te = X_train.shape[0], X_test.shape[0]
         self.k = max(y_train.shape[1], y_test.shape[1])
-        #k #len(set(y_train.tolist()).union(set(y_test.tolist()))) # Number of unique classes
         self.b = bias
         self.smoothing_val = 1 / (self.n_tr * 0.01)
         self.w_init_tr = self._get_init_distr('unif', False, True, bias)
         self.w_init_te = self._get_init_distr('unif', False, False, bias)
-
-    def _get_multiclass_data(self, X, Y):
-        """
-        Input
-        ____
-        X: N by d, numpy-like array, training data.
-        Y: N by 1, numpy-like array, training labels.
-
-        returns
-        -------
-        X_m: (N * k) by (d + 1), transformed training data to map each row or example in X
-             to k classes and add a new column differentiating each identical row. Meaning
-             that two rows can have the same x_1 but differ by the class which is held in the
-             last column (this is why we needed d + 1, as opposed to d).
-        Y_m: (N * k) by 1, each element is either \pm 1.
-             It is the indicator of whether the ith label is equal to a particular class.
-        """
-        N = X.shape[0]
-        # the [:, None] trick is to coerce (n,) -> (n,1).
-        class_col = np.arange(self.k)[:, None]
-        repeat_row = lambda x: np.tile(x, (self.k,1))
-
-        # Each element in Xs is just a repeated row of X, x_i, k times with the additional
-        # column of the k classes.
-        Xs = [np.hstack((repeat_row(X[i, :]), class_col))
-              for i in range(N)]
-        X_m = np.vstack(Xs)
-
-        Y = Y[:, None] # Make sure that it is (N, 1) instead of (N,)
-        # Ys takes each ith label and repeats it k times,
-        # so it will be a k by N matrix where each column is the ith
-        # label repeated k times.
-        Ys = np.hstack([repeat_row(Y[i, :]) for i in range(N)])
-        # Unravel the matrix column wise
-        Ys_col = np.ravel(Ys, order='F')
-        Y_m = [1 if X_m[i, -1] == Ys_col[i] else -1 for i in range(N*self.k)]
-        return (X_m, np.array(Y_m))
-
-    def _one_hot_labels(self, y):
-        """
-        y: N by 1 numpy-array corresponding to the labels.
-        k: float, corresponding to number of unique classes.
-        returns: Y, an N by k numpy-array with each row containing
-                 a 1 for the correct class and -1 otherwise.
-        """
-        N = y.shape[0]
-        Y = np.ones((N, self.k)) * -1
-        for i in range(N):
-            Y[i, y[i]] *= -1 # Make the correct class become +1.
-        return Y
 
 
     def _get_init_distr(self, init_scheme, raveled, use_train, bias):
@@ -169,7 +118,7 @@ class AdaBoostMH:
         return h_loss
 
 
-    def run_kegl(self, T, weak_learner, W_init, verbose=0):
+    def run_one_against_all(self, T, weak_learner, W_init, verbose=0):
         # Map instance variables to local variables to be more explicit.
         X_train, X_test = self.X_tr, self.X_te
         Y_train, Y_test = self.y_tr, self.y_te
@@ -193,8 +142,8 @@ class AdaBoostMH:
             gamma_t = 0.0
             for l in range(k):
                 alpha, _, phi, gamma, b, j = weak_learner(X_train, np.atleast_2d(Y_train[:, l]).T, np.atleast_2d(D_t[:, l]).T)
-                print("{}   gamma = {}  b = {},  j = {}".format(l,gamma,b,j))
-                print("Sum of weights in column = {}".format(np.sum(D_t[:,l])))
+                #print("{}   gamma = {}  b = {},  j = {}".format(l,gamma,b,j))
+                #print("Sum of weights in column = {}".format(np.sum(D_t[:,l])))
                 alphas_t.append(alpha)
                 h_t.append(phi)
                 gamma_t = gamma_t + gamma
