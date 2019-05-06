@@ -37,7 +37,10 @@ def save_csv_as_np(data_path, save_path, filename, k):
             x = str_row[0].split(',')
             x = [float(i) for i in x]
             y = str_row[1].split(',')
-            y = [int(i) for i in y]
+            if y[0] == ' \n': # Handle no labels case
+                y = []
+            else:
+                y = [int(i) for i in y]
             x_s.append(x)
             y_s.append(y)
 
@@ -66,8 +69,8 @@ def main():
     #save_csv_as_np(data_path_test, '../isolet/', 'isolet_test')
 
     # Assume that y constitutes integers that start at 0
-    k = 10
-    data_path = '../pendigits/'
+    k = 4
+    data_path = '../synth/multi/alt/'
     data_path_train = data_path + 'train.tra'
     data_path_test = data_path + 'test.tes'
     save_csv_as_np(data_path_train, data_path, 'train', k)
